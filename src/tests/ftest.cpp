@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include "Ptexture.h"
 
+using namespace Ptexture;
+
 int main(int argc, char** argv)
 {
     int maxmem = argc >= 2 ? atoi(argv[1]) : 1024*1024;

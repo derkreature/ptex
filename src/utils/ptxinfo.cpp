@@ -37,6 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 #include "Ptexture.h"
 #include "PtexReader.h"
 
+using namespace Ptexture;
+
 void DumpFaceInfo(const Ptex::FaceInfo& f)
 {
     Ptex::Res res = f.res;

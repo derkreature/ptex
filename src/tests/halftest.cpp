@@ -69,6 +69,8 @@ typedef half H;
 
 #include "PtexHalf.h"
 
+using namespace Ptexture;
+
 float h2f(uint16_t h)
 {
     return PtexHalf::toFloat(h);

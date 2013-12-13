@@ -1,7 +1,7 @@
 #ifndef PtexHalf_h
 #define PtexHalf_h
 
-/* 
+/*
 PTEX SOFTWARE
 Copyright 2009 Disney Enterprises, Inc.  All rights reserved
 
@@ -57,7 +57,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 #  endif
 #endif
 
+#include "Ptexture.h"
 #include "PtexInt.h"
+
+namespace Ptexture {
+namespace PTEXTURE_VERSION {
+
 
 /**
    @class PtexHalf
@@ -93,19 +98,19 @@ struct PtexHalf {
 
     static float toFloat(uint16_t h)
     {
-	union { uint32_t i; float f; } u;
-	u.i = h2fTable[h];
-	return u.f;
+        union { uint32_t i; float f; } u;
+        u.i = h2fTable[h];
+        return u.f;
     }
 
     static uint16_t fromFloat(float val)
     {
-	if (val==0) return 0;
-	union { uint32_t i; float f; } u;
-	u.f = val;
-	int e = f2hTable[(u.i>>23)&0x1ff];
-	if (e) return (uint16_t)(e + (((u.i&0x7fffff) + 0x1000) >> 13));
-	return fromFloat_except(u.i);
+        if (val==0) return 0;
+        union { uint32_t i; float f; } u;
+        u.f = val;
+        int e = f2hTable[(u.i>>23)&0x1ff];
+        if (e) return (uint16_t)(e + (((u.i&0x7fffff) + 0x1000) >> 13));
+        return fromFloat_except(u.i);
     }
 
  private:
@@ -116,5 +121,11 @@ struct PtexHalf {
     PTEXAPI static uint32_t h2fTable[65536];
     PTEXAPI static uint16_t f2hTable[512];
 };
+
+} // end namespace PTEXTURE_VERSION
+using namespace PTEXTURE_VERSION;
+
+} // end namespace Ptexture
+
 
 #endif

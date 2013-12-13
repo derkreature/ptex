@@ -1,4 +1,4 @@
-/* 
+/*
 PTEX SOFTWARE
 Copyright 2009 Disney Enterprises, Inc.  All rights reserved
 
@@ -41,14 +41,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 #include "PtexTriangleKernel.h"
 #include "PtexUtils.h"
 
-namespace {
-    inline float squared(float x) { return x*x; }
-}
+namespace Ptexture {
+namespace PTEXTURE_VERSION {
+
+inline float squared(float x) { return x*x; }
 
 void PtexTriangleFilter::eval(float* result, int firstChan, int nChannels,
-			      int faceid, float u, float v,
-			      float uw1, float vw1, float uw2, float vw2,
-			      float width, float blur)
+                              int faceid, float u, float v,
+                              float uw1, float vw1, float uw2, float vw2,
+                              float width, float blur)
 {
     // init
     if (!_tx || nChannels <= 0) return;
@@ -63,14 +64,14 @@ void PtexTriangleFilter::eval(float* result, int firstChan, int nChannels,
 
     // if neighborhood is constant, just return constant value of face
     if (f.isNeighborhoodConstant()) {
-	PtexPtr<PtexFaceData> data ( _tx->getData(faceid, 0) );
-	if (data) {
-	    char* d = (char*) data->getData() + _firstChanOffset;
-	    Ptex::ConvertToFloat(result, d, _dt, _nchan);
-	}
-	return;
+        PtexPtr<PtexFaceData> data ( _tx->getData(faceid, 0) );
+        if (data) {
+            char* d = (char*) data->getData() + _firstChanOffset;
+            Ptex::ConvertToFloat(result, d, _dt, _nchan);
+        }
+        return;
     }
-    
+
     // clamp u and v
     u = PtexUtils::clamp(u, 0.0f, 1.0f);
     v = PtexUtils::clamp(v, 0.0f, 1.0f);
@@ -100,9 +101,9 @@ void PtexTriangleFilter::eval(float* result, int firstChan, int nChannels,
 
 
 
-void PtexTriangleFilter::buildKernel(PtexTriangleKernel& k, float u, float v, 
-				     float uw1, float vw1, float uw2, float vw2,
-				     float width, float blur, Res faceRes)
+void PtexTriangleFilter::buildKernel(PtexTriangleKernel& k, float u, float v,
+                                     float uw1, float vw1, float uw2, float vw2,
+                                     float width, float blur, Res faceRes)
 {
     const float sqrt3 = 1.7320508075688772f;
 
@@ -136,7 +137,7 @@ void PtexTriangleFilter::buildKernel(PtexTriangleKernel& k, float u, float v,
 
     // compute minor radius
     float m = sqrtf(2.0f*(Ac*Cc - 0.25f*Bc*Bc) / (Ac + Cc + X));
-    
+
     // choose desired resolution
     int reslog2 = PtexUtils::max(0, int(ceilf(log2f(0.5f/m))));
 
@@ -166,27 +167,27 @@ void PtexTriangleFilter::splitAndApply(PtexTriangleKernel& k, int faceid, const 
 {
     // do we need to split? if so, split kernel and apply across edge(s)
     if (k.u1 < 0 && f.adjface(2) >= 0) {
-	PtexTriangleKernel ka;
-	k.splitU(ka);
-	applyAcrossEdge(ka, f, 2);
+        PtexTriangleKernel ka;
+        k.splitU(ka);
+        applyAcrossEdge(ka, f, 2);
     }
     if (k.v1 < 0 && f.adjface(0) >= 0) {
-	PtexTriangleKernel ka;
-	k.splitV(ka);
-	applyAcrossEdge(ka, f, 0);
+        PtexTriangleKernel ka;
+        k.splitV(ka);
+        applyAcrossEdge(ka, f, 0);
     }
     if (k.w1 < 0 && f.adjface(1) >= 0) {
-	PtexTriangleKernel ka;
-	k.splitW(ka);
-	applyAcrossEdge(ka, f, 1);
+        PtexTriangleKernel ka;
+        k.splitW(ka);
+        applyAcrossEdge(ka, f, 1);
     }
     // apply to local face
-    apply(k, faceid, f); 
+    apply(k, faceid, f);
 }
 
 
-void PtexTriangleFilter::applyAcrossEdge(PtexTriangleKernel& k, 
-					 const Ptex::FaceInfo& f, int eid)
+void PtexTriangleFilter::applyAcrossEdge(PtexTriangleKernel& k,
+                                         const Ptex::FaceInfo& f, int eid)
 {
     int afid = f.adjface(eid), aeid = f.adjedge(eid);
     const Ptex::FaceInfo& af = _tx->getFaceInfo(afid);
@@ -218,44 +219,47 @@ void PtexTriangleFilter::apply(PtexTriangleKernel& k, int faceid, const Ptex::Fa
 void PtexTriangleFilter::applyIter(PtexTriangleKernelIter& k, PtexFaceData* dh)
 {
     if (dh->isConstant()) {
-	k.applyConst(_result, (char*)dh->getData()+_firstChanOffset, _dt, _nchan);
-	_weight += k.weight;
+        k.applyConst(_result, (char*)dh->getData()+_firstChanOffset, _dt, _nchan);
+        _weight += k.weight;
     }
     else if (dh->isTiled()) {
-	Ptex::Res tileres = dh->tileRes();
-	PtexTriangleKernelIter kt = k;
-	int tileresu = tileres.u();
-	int tileresv = tileres.v();
-	kt.rowlen = tileresu;
-	int ntilesu = k.rowlen / kt.rowlen;
-	int wOffsetBase = k.rowlen - tileresu;
-	for (int tilev = k.v1 / tileresv, tilevEnd = (k.v2-1) / tileresv; tilev <= tilevEnd; tilev++) {
-	    int vOffset = tilev * tileresv;
-	    kt.v = k.v - (float)vOffset;
-	    kt.v1 = PtexUtils::max(0, k.v1 - vOffset);
-	    kt.v2 = PtexUtils::min(k.v2 - vOffset, tileresv);
-	    for (int tileu = k.u1 / tileresu, tileuEnd = (k.u2-1) / tileresu; tileu <= tileuEnd; tileu++) {
-		int uOffset = tileu * tileresu;
-		int wOffset = wOffsetBase - uOffset - vOffset;
-		kt.u = k.u - (float)uOffset;
-		kt.u1 = PtexUtils::max(0, k.u1 - uOffset);
-		kt.u2 = PtexUtils::min(k.u2 - uOffset, tileresu);
-		kt.w1 = k.w1 - wOffset;
-		kt.w2 = k.w2 - wOffset;
-		PtexPtr<PtexFaceData> th ( dh->getTile(tilev * ntilesu + tileu) );
-		if (th) {
-		    kt.weight = 0;
-		    if (th->isConstant())
-			kt.applyConst(_result, (char*)th->getData()+_firstChanOffset, _dt, _nchan);
-		    else
-			kt.apply(_result, (char*)th->getData()+_firstChanOffset, _dt, _nchan, _ntxchan);
-		    _weight += kt.weight;
-		}
-	    }
-	}
+        Ptex::Res tileres = dh->tileRes();
+        PtexTriangleKernelIter kt = k;
+        int tileresu = tileres.u();
+        int tileresv = tileres.v();
+        kt.rowlen = tileresu;
+        int ntilesu = k.rowlen / kt.rowlen;
+        int wOffsetBase = k.rowlen - tileresu;
+        for (int tilev = k.v1 / tileresv, tilevEnd = (k.v2-1) / tileresv; tilev <= tilevEnd; tilev++) {
+            int vOffset = tilev * tileresv;
+            kt.v = k.v - (float)vOffset;
+            kt.v1 = PtexUtils::max(0, k.v1 - vOffset);
+            kt.v2 = PtexUtils::min(k.v2 - vOffset, tileresv);
+            for (int tileu = k.u1 / tileresu, tileuEnd = (k.u2-1) / tileresu; tileu <= tileuEnd; tileu++) {
+                int uOffset = tileu * tileresu;
+                int wOffset = wOffsetBase - uOffset - vOffset;
+                kt.u = k.u - (float)uOffset;
+                kt.u1 = PtexUtils::max(0, k.u1 - uOffset);
+                kt.u2 = PtexUtils::min(k.u2 - uOffset, tileresu);
+                kt.w1 = k.w1 - wOffset;
+                kt.w2 = k.w2 - wOffset;
+                PtexPtr<PtexFaceData> th ( dh->getTile(tilev * ntilesu + tileu) );
+                if (th) {
+                    kt.weight = 0;
+                    if (th->isConstant())
+                        kt.applyConst(_result, (char*)th->getData()+_firstChanOffset, _dt, _nchan);
+                    else
+                        kt.apply(_result, (char*)th->getData()+_firstChanOffset, _dt, _nchan, _ntxchan);
+                    _weight += kt.weight;
+                }
+            }
+        }
     }
     else {
-	k.apply(_result, (char*)dh->getData()+_firstChanOffset, _dt, _nchan, _ntxchan);
-	_weight += k.weight;
+        k.apply(_result, (char*)dh->getData()+_firstChanOffset, _dt, _nchan, _ntxchan);
+        _weight += k.weight;
     }
 }
+
+} // end namespace PTEXTURE_VERSION
+} // end namespace Ptexture

@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <cstdio> // printf()
 
+using namespace Ptexture;
+
 void DumpData(Ptex::Res res, Ptex::DataType dt, int nchan, void* data, std::string prefix)
 {
     float* pixel = (float*) malloc(sizeof(float)*nchan);

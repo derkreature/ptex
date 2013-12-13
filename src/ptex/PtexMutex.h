@@ -1,7 +1,7 @@
 #ifndef PtexMutex_h
 #define PtexMutex_h
 
-/* 
+/*
 PTEX SOFTWARE
 Copyright 2009 Disney Enterprises, Inc.  All rights reserved
 
@@ -38,18 +38,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 
 // #define DEBUG_THREADING
 
+#include "Ptexture.h"
+#include "PtexPlatform.h"
+
+namespace Ptexture {
+namespace PTEXTURE_VERSION {
+
 /** For internal use only */
 namespace PtexInternal {
+
 #ifndef NDEBUG
     template <class T>
     class DebugLock : public T {
      public:
-	DebugLock() : _locked(0) {}
-	void lock()   { T::lock(); _locked = 1; }
-	void unlock() { assert(_locked); _locked = 0; T::unlock(); }
-	bool locked() { return _locked != 0; }
+        DebugLock() : _locked(0) {}
+        void lock()   { T::lock(); _locked = 1; }
+        void unlock() { assert(_locked); _locked = 0; T::unlock(); }
+        bool locked() { return _locked != 0; }
      private:
-	int _locked;
+        int _locked;
     };
 #endif
 
@@ -57,10 +64,10 @@ namespace PtexInternal {
     template <class T>
     class AutoLock {
     public:
-	AutoLock(T& m) : _m(m) { _m.lock(); }
-	~AutoLock()            { _m.unlock(); }
+        AutoLock(T& m) : _m(m) { _m.lock(); }
+        ~AutoLock()            { _m.unlock(); }
     private:
-	T& _m;
+        T& _m;
     };
 
 #ifndef NDEBUG
@@ -74,6 +81,12 @@ namespace PtexInternal {
 
     typedef AutoLock<Mutex> AutoMutex;
     typedef AutoLock<SpinLock> AutoSpin;
-}
+} // end namespace PtexInternal
+
+} // end namespace PTEXTURE_VERSION
+using namespace PTEXTURE_VERSION;
+
+} // end namespace Ptexture
+
 
 #endif

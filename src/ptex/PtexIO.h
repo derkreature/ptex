@@ -1,7 +1,7 @@
 #ifndef PtexIO_h
 #define PtexIO_h
 
-/* 
+/*
 PTEX SOFTWARE
 Copyright 2009 Disney Enterprises, Inc.  All rights reserved
 
@@ -35,67 +35,69 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 */
-
 #include "Ptexture.h"
+
+namespace Ptexture {
+namespace PTEXTURE_VERSION {
 
 struct PtexIO : public Ptex {
     struct Header {
-	uint32_t magic;
-	uint32_t version;
-	MeshType meshtype:32;
-	DataType datatype:32;
-	int32_t  alphachan;
-	uint16_t nchannels;
-	uint16_t nlevels;
-	uint32_t nfaces;
-	uint32_t extheadersize;
-	uint32_t faceinfosize;
-	uint32_t constdatasize;
-	uint32_t levelinfosize;
-	uint32_t minorversion;
-	uint64_t leveldatasize;
-	uint32_t metadatazipsize;
-	uint32_t metadatamemsize;
-	int pixelSize() const { return DataSize(datatype) * nchannels; }
-	bool hasAlpha() const { return alphachan >= 0 && alphachan < nchannels; }
+        uint32_t magic;
+        uint32_t version;
+        MeshType meshtype:32;
+        DataType datatype:32;
+        int32_t  alphachan;
+        uint16_t nchannels;
+        uint16_t nlevels;
+        uint32_t nfaces;
+        uint32_t extheadersize;
+        uint32_t faceinfosize;
+        uint32_t constdatasize;
+        uint32_t levelinfosize;
+        uint32_t minorversion;
+        uint64_t leveldatasize;
+        uint32_t metadatazipsize;
+        uint32_t metadatamemsize;
+        int pixelSize() const { return DataSize(datatype) * nchannels; }
+        bool hasAlpha() const { return alphachan >= 0 && alphachan < nchannels; }
     };
     struct ExtHeader {
-	BorderMode ubordermode:16;
+        BorderMode ubordermode:16;
         uint16_t pad;
-	BorderMode vbordermode:16;
-	EdgeFilterMode edgefiltermode:16;
-	uint32_t lmdheaderzipsize;
-	uint32_t lmdheadermemsize;
-	uint64_t lmddatasize;
-	uint64_t editdatasize;
-	uint64_t editdatapos;
+        BorderMode vbordermode:16;
+        EdgeFilterMode edgefiltermode:16;
+        uint32_t lmdheaderzipsize;
+        uint32_t lmdheadermemsize;
+        uint64_t lmddatasize;
+        uint64_t editdatasize;
+        uint64_t editdatapos;
     };
     struct LevelInfo {
-	uint64_t leveldatasize;
-	uint32_t levelheadersize;
-	uint32_t nfaces;
-	LevelInfo() : leveldatasize(0), levelheadersize(0), nfaces(0) {}
+        uint64_t leveldatasize;
+        uint32_t levelheadersize;
+        uint32_t nfaces;
+        LevelInfo() : leveldatasize(0), levelheadersize(0), nfaces(0) {}
     };
     enum Encoding { enc_constant, enc_zipped, enc_diffzipped, enc_tiled };
     struct FaceDataHeader {
-	uint32_t data; // bits 0..29 = blocksize, bits 30..31 = encoding
-	uint32_t blocksize() const { return data & 0x3fffffff; }
-	Encoding encoding() const { return Encoding((data >> 30) & 0x3); }
-	uint32_t& val() { return *(uint32_t*) this; }
-	const uint32_t& val() const { return *(uint32_t*) this; }
-	void set(uint32_t blocksize, Encoding encoding)
-	{ data = (blocksize & 0x3fffffff) | ((encoding & 0x3) << 30); }
-	FaceDataHeader() : data(0) {}
+        uint32_t data; // bits 0..29 = blocksize, bits 30..31 = encoding
+        uint32_t blocksize() const { return data & 0x3fffffff; }
+        Encoding encoding() const { return Encoding((data >> 30) & 0x3); }
+        uint32_t& val() { return *(uint32_t*) this; }
+        const uint32_t& val() const { return *(uint32_t*) this; }
+        void set(uint32_t blocksize, Encoding encoding)
+        { data = (blocksize & 0x3fffffff) | ((encoding & 0x3) << 30); }
+        FaceDataHeader() : data(0) {}
     };
     enum EditType { et_editfacedata, et_editmetadata };
     struct EditFaceDataHeader {
-	uint32_t faceid;
-	FaceInfo faceinfo;
-	FaceDataHeader fdh;
+        uint32_t faceid;
+        FaceInfo faceinfo;
+        FaceDataHeader fdh;
     };
     struct EditMetaDataHeader {
-	uint32_t metadatazipsize;
-	uint32_t metadatamemsize;
+        uint32_t metadatazipsize;
+        uint32_t metadatamemsize;
     };
 
     static const uint32_t Magic = 'P' | ('t'<<8) | ('e'<<16) | ('x'<<24);
@@ -114,9 +116,15 @@ struct PtexIO : public Ptex {
     static const int MetaDataThreshold = 1024; // cutoff for large meta data
 
     static bool LittleEndian() {
-	short word = 0x0201;
-	return *(char*)&word == 1; 
+        short word = 0x0201;
+        return *(char*)&word == 1;
     }
 };
+
+} // end namespace PTEXTURE_VERSION
+using namespace PTEXTURE_VERSION;
+
+} // end namespace Ptexture
+
 
 #endif

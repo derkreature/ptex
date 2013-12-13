@@ -9,7 +9,7 @@ endif
 # DEBUG = -g -DDEBUG
 DEBUG    = -O2 -DNDEBUG
 INCPATH  = -I.
-DEFINES  = 
+DEFINES  =
 
 ifdef PRMAN_15_COMPATIBLE_PTEX
 DEFINES += -DPTEX_NO_LARGE_METADATA_BLOCKS
@@ -20,22 +20,22 @@ DEFINES += -DPTEX_STATIC
 endif
 
 CXXFLAGS = -Wall -pedantic -W -std=c++98 $(DEBUG) $(INCPATH) $(DEFINES) -fPIC
-LFLAGS   = 
+LFLAGS   =
 LIBS     = -lm -lz -lpthread
 
 -include ../config.mak
 
 SRCS = \
-	PtexCache.cpp \
-	PtexFilters.cpp \
-	PtexHalf.cpp \
-	PtexReader.cpp \
-	PtexSeparableFilter.cpp \
-	PtexSeparableKernel.cpp \
-	PtexTriangleFilter.cpp \
-	PtexTriangleKernel.cpp \
-	PtexUtils.cpp \
-	PtexWriter.cpp
+        PtexCache.cpp \
+        PtexFilters.cpp \
+        PtexHalf.cpp \
+        PtexReader.cpp \
+        PtexSeparableFilter.cpp \
+        PtexSeparableKernel.cpp \
+        PtexTriangleFilter.cpp \
+        PtexTriangleKernel.cpp \
+        PtexUtils.cpp \
+        PtexWriter.cpp
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SRCS))
 
@@ -43,13 +43,13 @@ INSTALLDIR = ../../install
 LIBDIR = lib
 
 INSTALL = \
-	$(LIBDIR)/libPtex.a \
-	include/Ptexture.h \
-	include/PtexHalf.h \
-	include/PtexInt.h \
-	include/PtexUtils.h
+        $(LIBDIR)/libPtex.a \
+        include/Ptexture.h \
+        include/PtexHalf.h \
+        include/PtexInt.h \
+        include/PtexUtils.h
 
-ALL = libPtex.a 
+ALL = libPtex.a
 
 ifndef PTEX_STATIC
 ALL += libPtex.so
@@ -57,36 +57,36 @@ INSTALL += $(LIBDIR)/libPtex.so
 endif
 
 $(INSTALLDIR)/$(LIBDIR)/% : %
-	@ mkdir -p $(@D)
-	cp $^ $@
+        @ mkdir -p $(@D)
+        cp $^ $@
 
 $(INSTALLDIR)/bin/% : %
-	@ mkdir -p $(@D)
-	cp $^ $@
+        @ mkdir -p $(@D)
+        cp $^ $@
 
 $(INSTALLDIR)/include/% : %
-	@ mkdir -p $(@D)
-	cp $^ $@
+        @ mkdir -p $(@D)
+        cp $^ $@
 
 install: all $(patsubst %,$(INSTALLDIR)/%,$(INSTALL))
 
 all: $(ALL)
 
 clean:
-	rm -f *.o $(ALL)
+        rm -f *.o $(ALL)
 
 ifdef PTEX_STATIC
 libPtex.a : libPtex.a($(OBJECTS))
-	ar -r $@
+        ar -r $@
 
 else
 libPtex.a : libPtex.a($(OBJECTS))
 
 libPtex.so: $(OBJECTS)
-	$(LINK) $(LFLAGS) -shared -o $@ $(OBJECTS) $(LIBS)
+        $(LINK) $(LFLAGS) -shared -o $@ $(OBJECTS) $(LIBS)
 endif
 
 depend:
-	$(CXX) -MM $(SRCS) > Makefile.deps
+        $(CXX) -MM $(SRCS) > Makefile.deps
 
 include Makefile.deps

@@ -1,7 +1,7 @@
 #ifndef PtexCache_h
 #define PtexCache_h
 
-/* 
+/*
 PTEX SOFTWARE
 Copyright 2009 Disney Enterprises, Inc.  All rights reserved
 
@@ -35,13 +35,15 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 */
-
 #include "PtexPlatform.h"
 #include <assert.h>
 
 #include "PtexMutex.h"
 #include "Ptexture.h"
 #include "PtexDict.h"
+
+namespace Ptexture {
+namespace PTEXTURE_VERSION {
 
 #define USE_SPIN // use spinlocks instead of mutex for main cache lock
 
@@ -60,35 +62,35 @@ namespace PtexInternal {
 
 #ifdef GATHER_STATS
     struct CacheStats{
-	int nfilesOpened;
-	int nfilesClosed;
-	int ndataAllocated;
-	int ndataFreed;
-	int nblocksRead;
-	long int nbytesRead;
-	int nseeks;
+        int nfilesOpened;
+        int nfilesClosed;
+        int ndataAllocated;
+        int ndataFreed;
+        int nblocksRead;
+        long int nbytesRead;
+        int nseeks;
 
-	CacheStats()
-	    : nfilesOpened(0),
-	      nfilesClosed(0),
-	      ndataAllocated(0),
-	      ndataFreed(0),
-	      nblocksRead(0),
-	      nbytesRead(0),
-	      nseeks(0)	{}
+        CacheStats()
+            : nfilesOpened(0),
+              nfilesClosed(0),
+              ndataAllocated(0),
+              ndataFreed(0),
+              nblocksRead(0),
+              nbytesRead(0),
+              nseeks(0)        {}
 
-	~CacheStats();
-	void print();
-	static void inc(int& val) {
-	    static SpinLock spinlock;
-	    AutoSpin lock(spinlock);
-	    val++;
-	}
-	static void add(long int& val, int inc) {
-	    static SpinLock spinlock;
-	    AutoSpin lock(spinlock);
-	    val+=inc;
-	}
+        ~CacheStats();
+        void print();
+        static void inc(int& val) {
+            static SpinLock spinlock;
+            AutoSpin lock(spinlock);
+            val++;
+        }
+        static void add(long int& val, int inc) {
+            static SpinLock spinlock;
+            AutoSpin lock(spinlock);
+            val+=inc;
+        }
     };
     extern CacheStats stats;
 #define STATS_INC(x) stats.inc(stats.x);
@@ -104,45 +106,45 @@ using namespace PtexInternal;
 class PtexLruItem {
 public:
     bool inuse() { return _prev == 0; }
-    void orphan() 
+    void orphan()
     {
-	// parent no longer wants me
-	void** p = _parent;
-	_parent = 0;
-	assert(p && *p == this);
-	if (!inuse()) delete this;
-	*p = 0;
+        // parent no longer wants me
+        void** p = _parent;
+        _parent = 0;
+        assert(p && *p == this);
+        if (!inuse()) delete this;
+        *p = 0;
     }
     template <typename T> static void orphanList(T& list)
     {
-	for (typename T::iterator i=list.begin(); i != list.end(); i++) {
-	    PtexLruItem* obj = *i;
-	    if (obj) {
-		assert(obj->_parent == (void**)&*i);
-		obj->orphan();
-	    }
-	}
+        for (typename T::iterator i=list.begin(); i != list.end(); i++) {
+            PtexLruItem* obj = *i;
+            if (obj) {
+                assert(obj->_parent == (void**)&*i);
+                obj->orphan();
+            }
+        }
     }
 
 protected:
     PtexLruItem(void** parent=0)
-	: _parent(parent), _prev(0), _next(0) {}
+        : _parent(parent), _prev(0), _next(0) {}
     virtual ~PtexLruItem()
     {
-	// detach from parent (if any)
-	if (_parent) { assert(*_parent == this); *_parent = 0; }
-	// unlink from lru list (if in list)
-	if (_prev) {
-	    _prev->_next = _next; 
-	    _next->_prev = _prev;
-	}
+        // detach from parent (if any)
+        if (_parent) { assert(*_parent == this); *_parent = 0; }
+        // unlink from lru list (if in list)
+        if (_prev) {
+            _prev->_next = _next;
+            _next->_prev = _prev;
+        }
     }
 
 private:
-    friend class PtexLruList;	// maintains prev/next, deletes
-    void** _parent;		// pointer to this item within parent
-    PtexLruItem* _prev;		// prev in lru list (0 if in-use)
-    PtexLruItem* _next;		// next in lru list (0 if in-use)
+    friend class PtexLruList;        // maintains prev/next, deletes
+    void** _parent;                // pointer to this item within parent
+    PtexLruItem* _prev;                // prev in lru list (0 if in-use)
+    PtexLruItem* _next;                // next in lru list (0 if in-use)
 };
 
 
@@ -156,30 +158,30 @@ public:
 
     void extract(PtexLruItem* node)
     {
-	// remove from list
-	node->_prev->_next = node->_next;
-	node->_next->_prev = node->_prev;
-	node->_next = node->_prev = 0;
+        // remove from list
+        node->_prev->_next = node->_next;
+        node->_next->_prev = node->_prev;
+        node->_next = node->_prev = 0;
     }
 
     void push(PtexLruItem* node)
     {
-	// delete node if orphaned
-	if (!node->_parent) delete node;
-	else {
-	    // add to end of list
-	    node->_next = &_end;
-	    node->_prev = _end._prev;
-	    _end._prev->_next = node;
-	    _end._prev = node;
-	}
+        // delete node if orphaned
+        if (!node->_parent) delete node;
+        else {
+            // add to end of list
+            node->_next = &_end;
+            node->_prev = _end._prev;
+            _end._prev->_next = node;
+            _end._prev = node;
+        }
     }
 
     bool pop()
     {
-	if (_end._next == &_end) return 0;
-	delete _end._next; // item will unlink itself
-	return 1;
+        if (_end._next == &_end) return 0;
+        delete _end._next; // item will unlink itself
+        return 1;
     }
 
 private:
@@ -192,22 +194,22 @@ private:
 class PtexCacheImpl : public PtexCache {
 public:
     PtexCacheImpl(int maxFiles, int maxMem)
-	: _pendingDelete(false),
-	  _maxFiles(maxFiles), _unusedFileCount(0),
-	  _maxDataSize(maxMem),
-	  _unusedDataSize(0), _unusedDataCount(0)
+        : _pendingDelete(false),
+          _maxFiles(maxFiles), _unusedFileCount(0),
+          _maxDataSize(maxMem),
+          _unusedDataSize(0), _unusedDataCount(0)
     {
-	/* Allow for a minimum number of data blocks so cache doesn't
-	   thrash too much if there are any really big items in the
-	   cache pushing over the limit. It's better to go over the
-	   limit in this case and make sure there's room for at least
-	   a modest number of objects in the cache.
-	*/
+        /* Allow for a minimum number of data blocks so cache doesn't
+           thrash too much if there are any really big items in the
+           cache pushing over the limit. It's better to go over the
+           limit in this case and make sure there's room for at least
+           a modest number of objects in the cache.
+        */
 
-	// try to allow for at least 10 objects per file (up to 100 files)
-	_minDataCount = 10 * maxFiles;
-	// but no more than 1000
-	if (_minDataCount > 1000) _minDataCount = 1000;
+        // try to allow for at least 10 objects per file (up to 100 files)
+        _minDataCount = 10 * maxFiles;
+        // but no more than 1000
+        if (_minDataCount > 1000) _minDataCount = 1000;
     }
 
     virtual void release() { delete this; }
@@ -230,31 +232,31 @@ public:
     void removeData(int size);
 
     void purgeFiles() {
-	while (_unusedFileCount > _maxFiles) 
-	{
-	    if (!_unusedFiles.pop()) break;
-	    // note: pop will destroy item and item destructor will
-	    // call removeFile which will decrement _unusedFileCount
-	}
+        while (_unusedFileCount > _maxFiles)
+        {
+            if (!_unusedFiles.pop()) break;
+            // note: pop will destroy item and item destructor will
+            // call removeFile which will decrement _unusedFileCount
+        }
     }
     void purgeData() {
-	while ((_unusedDataSize > _maxDataSize) &&
-	       (_unusedDataCount > _minDataCount))
-	{
-	    if (!_unusedData.pop()) break;
-	    // note: pop will destroy item and item destructor will
-	    // call removeData which will decrement _unusedDataSize
-	    // and _unusedDataCount
-	}
+        while ((_unusedDataSize > _maxDataSize) &&
+               (_unusedDataCount > _minDataCount))
+        {
+            if (!_unusedData.pop()) break;
+            // note: pop will destroy item and item destructor will
+            // call removeData which will decrement _unusedDataSize
+            // and _unusedDataCount
+        }
     }
 
 protected:
     ~PtexCacheImpl();
 
 private:
-    bool _pendingDelete;	             // flag set if delete is pending
+    bool _pendingDelete;                     // flag set if delete is pending
 
-    int _maxFiles, _unusedFileCount;	     // file limit, current unused file count
+    int _maxFiles, _unusedFileCount;             // file limit, current unused file count
     long int _maxDataSize, _unusedDataSize;  // data limit (bytes), current size
     int _minDataCount, _unusedDataCount;     // min, current # of unused data blocks
     PtexLruList _unusedFiles, _unusedData;   // lists of unused items
@@ -266,12 +268,12 @@ class PtexCachedFile : public PtexLruItem
 {
 public:
     PtexCachedFile(void** parent, PtexCacheImpl* cache)
-	: PtexLruItem(parent), _cache(cache), _refcount(1)
+        : PtexLruItem(parent), _cache(cache), _refcount(1)
     { _cache->addFile(); }
     void ref() { assert(_cache->cachelock.locked()); if (!_refcount++) _cache->setFileInUse(this); }
     void unref() { assert(_cache->cachelock.locked()); if (!--_refcount) _cache->setFileUnused(this); }
 protected:
-    virtual ~PtexCachedFile() {	_cache->removeFile(); }
+    virtual ~PtexCachedFile() {        _cache->removeFile(); }
     PtexCacheImpl* _cache;
 private:
     int _refcount;
@@ -283,7 +285,7 @@ class PtexCachedData : public PtexLruItem
 {
 public:
     PtexCachedData(void** parent, PtexCacheImpl* cache, int size)
-	: PtexLruItem(parent), _cache(cache), _refcount(1), _size(size)
+        : PtexLruItem(parent), _cache(cache), _refcount(1), _size(size)
     { _cache->addData(); }
     void ref() { assert(_cache->cachelock.locked()); if (!_refcount++) _cache->setDataInUse(this, _size); }
     void unref() { assert(_cache->cachelock.locked()); if (!--_refcount) _cache->setDataUnused(this, _size); }
@@ -296,5 +298,9 @@ private:
     int _size;
 };
 
+} // end namespace PTEXTURE_VERSION
+using namespace PTEXTURE_VERSION;
+
+} // end namespace Ptexture
 
 #endif
