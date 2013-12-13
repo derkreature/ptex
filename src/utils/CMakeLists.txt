@@ -9,3 +9,5 @@ execute_process(COMMAND git describe ${PTEX_SHA}
 add_executable(ptxinfo ptxinfo.cpp)
 add_definitions(-DPTEX_VER="${PTEX_VER} \(${PTEX_SHA}\)")
 target_link_libraries(ptxinfo Ptex_dynamic)
+
+install(TARGETS ptxinfo DESTINATION bin)
